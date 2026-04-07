@@ -1,0 +1,28 @@
+# Application configuration for pp_assistant
+# Use namespaces to separate concerns and keep YAML easy to extend.
+
+camera:
+  preview_size: [640, 480]
+  interleaved: false
+  stream_name: rgb
+
+ui:
+  window_name: image
+  points_required: 4
+
+calibration:
+  world_points:
+    - [0.0, 0.0]
+    - [45.0, 0.0]
+    - [45.9, 22.0]
+    - [0.0, 22.0]
+  target_world_point: [5.8, 10.0]
+
+marker:
+  color: [0, 0, 255]
+  radius: 5
+  thickness: -1
+
+drawing:
+  workspace_color: [255, 0, 0]
+  workspace_thickness: 2

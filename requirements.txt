@@ -1,0 +1,2 @@
+depthai
+pyyaml>=6.0
