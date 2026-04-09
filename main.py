@@ -1,5 +1,6 @@
 import cv2
 import logging
+import numpy as np
 from pp_assistant.camera import DepthAICameraPipeline
 from pp_assistant.calibration import HomographyCalibrator
 from pp_assistant.config import load_config
@@ -24,7 +25,10 @@ def main() -> None:
         frame = pipeline.get_frame()
 
     # Initialize rectifier for undistortion
-    intrinsics, distortion = camera_pipeline.get_intrinsics()
+    intrinsics = np.array(config.camera.intrinsics, dtype=np.float64)
+    distortion = np.array(config.camera.distortion_coeffs, dtype=np.float64)
+    logging.info(f"Camera Intrinsics:\n{intrinsics}")
+    logging.info(f"Distortion Coefficients:\n{distortion}")
     rectifier = Rectifier(intrinsics, distortion, config.camera.preview_size)
     
     # Undistort the frame

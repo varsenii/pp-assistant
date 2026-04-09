@@ -21,6 +21,8 @@ class CameraConfig:
     preview_size: Tuple[int, int] = (640, 480)
     interleaved: bool = False
     stream_name: str = "rgb"
+    intrinsics: List[List[float]] = field(default_factory=lambda: [[500.38571167, 0.0, 314.06344604], [0.0, 500.47668457, 238.7240448], [0.0, 0.0, 1.0]])
+    distortion_coeffs: List[float] = field(default_factory=lambda: [-4.14610481e+00, 1.10561991e+01, -3.34565295e-04, -5.48989163e-04, -7.81179380e+00, -4.22761488e+00, 1.13181620e+01, -8.09042549e+00, 0.0, 0.0, 0.0, 0.0, -7.13373360e-04, -1.07512390e-03])
 
 
 @dataclass
@@ -82,6 +84,8 @@ def load_config(file_path: str = "config.yaml") -> AppConfig:
         preview_size=_normalize_tuple(camera_data.get("preview_size", (640, 480)), 2),
         interleaved=bool(camera_data.get("interleaved", False)),
         stream_name=str(camera_data.get("stream_name", "rgb")),
+        intrinsics=camera_data.get("intrinsics", [[500.38571167, 0.0, 314.06344604], [0.0, 500.47668457, 238.7240448], [0.0, 0.0, 1.0]]),
+        distortion_coeffs=camera_data.get("distortion_coeffs", [-4.14610481e+00, 1.10561991e+01, -3.34565295e-04, -5.48989163e-04, -7.81179380e+00, -4.22761488e+00, 1.13181620e+01, -8.09042549e+00, 0.0, 0.0, 0.0, 0.0, -7.13373360e-04, -1.07512390e-03]),
     )
 
     ui = UIConfig(
