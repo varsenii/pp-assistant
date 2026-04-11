@@ -2,7 +2,7 @@
 # Use namespaces to separate concerns and keep YAML easy to extend.
 
 datasets:
-  base_path: datasets
+  base_path: pp_assistant/datasets
 
 camera:
   preview_size: [640, 480]
