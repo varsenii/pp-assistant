@@ -2,12 +2,11 @@ import logging
 import math
 from typing import Iterable, List, Tuple
 
-
 class Workspace:
-    def __init__(self, config, corners: Iterable[Tuple[int, int]]):
+    def __init__(self, corners_world, corners_img: Iterable[Tuple[int, int]]):
         self.logger = logging.getLogger(__name__)
-        self.world_points = config.calibration.world_points
-        self.corners = self._compute_corners(list(corners))
+        self.corners_world = corners_world
+        self.corners_img = self._compute_corners(list(corners_img))
 
     def _compute_corners(self, points: List[Tuple[int, int]]) -> List[Tuple[int, int]]:
         if len(points) != 4:
@@ -28,3 +27,10 @@ class Workspace:
         # Rotate so the first point is the top-left corner
         top_left_index = min(range(4), key=lambda i: (sorted_points[i][1], sorted_points[i][0]))
         return [tuple(sorted_points[(top_left_index + i) % 4]) for i in range(4)]
+    
+    def to_dict(self) -> 'Workspace':
+        return {
+            'corners_world': self.corners_world,
+            'corners_img': self.corners_img
+        }
+

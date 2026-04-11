@@ -1,18 +1,36 @@
 import cv2
 import logging
 import numpy as np
+import argparse
+import os
 from pp_assistant.camera import DepthAICameraPipeline
 from pp_assistant.calibration import HomographyCalibrator
 from pp_assistant.config import load_config
 from pp_assistant.ui import PointSelectorUI
 from pp_assistant.workspace import Workspace
+from pp_assistant.dataset import Dataset
 from pp_assistant.drawing import Drawing
 from pp_assistant.rectifier import Rectifier
 
 
-def main() -> None:
+def parse_args():
+    parser = argparse.ArgumentParser(description="PP Assistant - pick-and-place data collection tool")
+
+    parser.add_argument(
+        "--dataset",
+        type=str,
+        required=True,
+        help="Name of the dataset",
+    )
+
+    return parser.parse_args()
+
+
+def main(dataset_name: str) -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s: %(message)s")
     config = load_config("pp_assistant/config/config.yaml")
+
+    dataset_dir = os.path.join(config.dataset.base_path, dataset_name)
 
     camera_pipeline = DepthAICameraPipeline(
         preview_size=config.camera.preview_size,
@@ -33,21 +51,29 @@ def main() -> None:
     
     # Undistort the frame
     frame = rectifier.undistort_frame(frame)
-
-    selector = PointSelectorUI(
-        window_name=config.ui.window_name,
-        points_required=config.ui.points_required,
-    )
-    image_points = selector.select_points(frame)
-
-    if len(image_points) != config.ui.points_required:
-        print(
-            f"Expected {config.ui.points_required} points, but got {len(image_points)}."
-            " Exiting without computing homography."
+        
+    # Use UI to select workspace corners
+    if os.path.exists(dataset_dir):
+        logging.info(f"Existing dataset found at {dataset_dir}. Loading workspace corners.")
+    else:
+        logging.info("No existing dataset found. Starting workspace selection.")
+        selector = PointSelectorUI(
+            window_name=config.ui.window_name,
+            points_required=config.ui.points_required,
         )
-        return
+        image_points = selector.select_points(frame)
+
+        if len(image_points) != config.ui.points_required:
+            print(
+                f"Expected {config.ui.points_required} points, but got {len(image_points)}."
+                " Exiting without computing homography."
+            )
+            return
     
-    workspace = Workspace(config, image_points)
+    workspace = Workspace(config.calibration.world_points, image_points)
+    dataset = Dataset(name=dataset_name, workspace=workspace)
+    dataset.save(dataset_dir)
+
     drawing = Drawing(config)
 
     calibrator = HomographyCalibrator(world_points=config.calibration.world_points)
@@ -76,4 +102,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    args = parse_args()
+    main(args.dataset)

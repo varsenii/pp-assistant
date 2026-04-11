@@ -1,6 +1,9 @@
 # Application configuration for pp_assistant
 # Use namespaces to separate concerns and keep YAML easy to extend.
 
+datasets:
+  base_path: datasets
+
 camera:
   preview_size: [640, 480]
   interleaved: false
@@ -18,7 +21,7 @@ ui:
 calibration:
   world_points:
     - [0.0, 0.0]
-    - [45.0, 0.0]
+    - [45.9, 0.0]
     - [45.9, 22.0]
     - [0.0, 22.0]
   target_world_point: [5.8, 10.0]

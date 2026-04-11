@@ -17,6 +17,11 @@ def _normalize_point_list(value: Sequence[Sequence[float]]) -> List[Tuple[float,
 
 
 @dataclass
+class DatasetConfig:
+    base_path: str = "datasets"
+
+
+@dataclass
 class CameraConfig:
     preview_size: Tuple[int, int] = (640, 480)
     interleaved: bool = False
@@ -59,6 +64,7 @@ class DrawingConfig:
 
 @dataclass
 class AppConfig:
+    dataset: DatasetConfig = field(default_factory=DatasetConfig)
     camera: CameraConfig = field(default_factory=CameraConfig)
     ui: UIConfig = field(default_factory=UIConfig)
     calibration: CalibrationConfig = field(default_factory=CalibrationConfig)
@@ -74,18 +80,21 @@ def load_config(file_path: str = "config.yaml") -> AppConfig:
     with config_path.open("r", encoding="utf-8") as config_file:
         raw_config = yaml.safe_load(config_file) or {}
 
+    dataset_data: Dict[str, Any] = raw_config.get("datasets", {})
     camera_data: Dict[str, Any] = raw_config.get("camera", {})
     ui_data: Dict[str, Any] = raw_config.get("ui", {})
     calibration_data: Dict[str, Any] = raw_config.get("calibration", {})
     marker_data: Dict[str, Any] = raw_config.get("marker", {})
     drawing_data: Dict[str, Any] = raw_config.get("drawing", {})
 
+    dataset = DatasetConfig(
+        base_path=str(dataset_data.get("base_path", "/pp_assistant/datasets"))
+    )
+
     camera = CameraConfig(
         preview_size=_normalize_tuple(camera_data.get("preview_size", (640, 480)), 2),
         interleaved=bool(camera_data.get("interleaved", False)),
         stream_name=str(camera_data.get("stream_name", "rgb")),
-        intrinsics=camera_data.get("intrinsics", [[500.38571167, 0.0, 314.06344604], [0.0, 500.47668457, 238.7240448], [0.0, 0.0, 1.0]]),
-        distortion_coeffs=camera_data.get("distortion_coeffs", [-4.14610481e+00, 1.10561991e+01, -3.34565295e-04, -5.48989163e-04, -7.81179380e+00, -4.22761488e+00, 1.13181620e+01, -8.09042549e+00, 0.0, 0.0, 0.0, 0.0, -7.13373360e-04, -1.07512390e-03]),
     )
 
     ui = UIConfig(
@@ -120,4 +129,4 @@ def load_config(file_path: str = "config.yaml") -> AppConfig:
         workspace_thickness=int(drawing_data.get("workspace_thickness", 2)),
     )
 
-    return AppConfig(camera=camera, ui=ui, calibration=calibration, marker=marker, drawing=drawing)
+    return AppConfig(dataset=dataset, camera=camera, ui=ui, calibration=calibration, marker=marker, drawing=drawing)

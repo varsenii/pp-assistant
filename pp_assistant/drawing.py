@@ -21,7 +21,7 @@ class Drawing:
             The annotated image.
         """
         annotated_image = image.copy()
-        corners = workspace.corners
+        corners = workspace.corners_img
 
         # Draw lines between consecutive corners
         for i in range(len(corners)):
