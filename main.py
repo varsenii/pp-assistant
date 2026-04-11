@@ -32,74 +32,82 @@ def main(dataset_name: str) -> None:
 
     dataset_dir = os.path.join(config.dataset.base_path, dataset_name)
 
-    camera_pipeline = DepthAICameraPipeline(
-        preview_size=config.camera.preview_size,
-        interleaved=config.camera.interleaved,
-        stream_name=config.camera.stream_name,
-    )
-    camera_pipeline.build_pipeline()
-
-    with camera_pipeline as pipeline:
-        frame = pipeline.get_frame()
-
-    # Initialize rectifier for undistortion
-    intrinsics = np.array(config.camera.intrinsics, dtype=np.float64)
-    distortion = np.array(config.camera.distortion_coeffs, dtype=np.float64)
-    logging.info(f"Camera Intrinsics:\n{intrinsics}")
-    logging.info(f"Distortion Coefficients:\n{distortion}")
-    rectifier = Rectifier(intrinsics, distortion, config.camera.preview_size)
-    
-    # Undistort the frame
-    frame = rectifier.undistort_frame(frame)
-        
-    # Use UI to select workspace corners
-    if os.path.exists(dataset_dir):
-        logging.info(f"Existing dataset found at {dataset_dir}. Loading workspace corners.")
-    else:
-        logging.info("No existing dataset found. Starting workspace selection.")
-        selector = PointSelectorUI(
-            window_name=config.ui.window_name,
-            points_required=config.ui.points_required,
+    try:
+        camera_pipeline = DepthAICameraPipeline(
+            preview_size=config.camera.preview_size,
+            interleaved=config.camera.interleaved,
+            stream_name=config.camera.stream_name,
         )
-        image_points = selector.select_points(frame)
+        camera_pipeline.build_pipeline()
 
-        if len(image_points) != config.ui.points_required:
-            print(
-                f"Expected {config.ui.points_required} points, but got {len(image_points)}."
-                " Exiting without computing homography."
+        with camera_pipeline as pipeline:
+            frame = pipeline.get_frame()
+
+        # Initialize rectifier for undistortion
+        intrinsics = np.array(config.camera.intrinsics, dtype=np.float64)
+        distortion = np.array(config.camera.distortion_coeffs, dtype=np.float64)
+        logging.info(f"Camera Intrinsics:\n{intrinsics}")
+        logging.info(f"Distortion Coefficients:\n{distortion}")
+        rectifier = Rectifier(intrinsics, distortion, config.camera.preview_size)
+        
+        # Undistort the frame
+        frame = rectifier.undistort_frame(frame)
+        
+        # Load the dataset if exists
+        if os.path.exists(dataset_dir):
+            logging.info(f"Existing dataset found at {dataset_dir}. Loading workspace corners.")
+            dataset = Dataset.from_json(path = dataset_dir)
+        
+        # Use UI to select workspace corners
+        else:
+            logging.info("No existing dataset found. Starting workspace selection.")
+            selector = PointSelectorUI(
+                window_name=config.ui.window_name,
+                points_required=config.ui.points_required,
             )
-            return
-    
-    workspace = Workspace(config.calibration.world_points, image_points)
-    dataset = Dataset(name=dataset_name, workspace=workspace)
-    dataset.save(dataset_dir)
+            image_points = selector.select_points(frame)
 
-    drawing = Drawing(config)
+            if len(image_points) != config.ui.points_required:
+                print(
+                    f"Expected {config.ui.points_required} points, but got {len(image_points)}."
+                    " Exiting without computing homography."
+                )
+                return
+        
+            workspace = Workspace(config.calibration.world_points, image_points)
+            dataset = Dataset(name=dataset_name, workspace=workspace)
+            dataset.save(dataset_dir)
 
-    calibrator = HomographyCalibrator(world_points=config.calibration.world_points)
-    calibrator.compute_homography(image_points)
+        drawing = Drawing(config)
 
-    u, v = calibrator.world_to_image(*config.calibration.target_world_point)
-    annotated_frame = frame.copy()
-    cv2.circle(
-        annotated_frame,
-        (u, v),
-        config.marker.radius,
-        config.marker.color,
-        config.marker.thickness,
-    )
+        calibrator = HomographyCalibrator(world_points=config.calibration.world_points)
+        calibrator.compute_homography(dataset.workspace.corners_img)
 
-    # Draw workspace edges
-    annotated_frame = drawing.draw_workspace_edges(annotated_frame, workspace)
+        u, v = calibrator.world_to_image(*config.calibration.target_world_point)
+        annotated_frame = frame.copy()
+        cv2.circle(
+            annotated_frame,
+            (u, v),
+            config.marker.radius,
+            config.marker.color,
+            config.marker.thickness,
+        )
 
-    cv2.imshow(config.ui.window_name, annotated_frame)
-    print(
-        f"Mapped world point {config.calibration.target_world_point} "
-        f"to image point {(u, v)}"
-    )
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+        # Draw workspace edges
+        annotated_frame = drawing.draw_workspace_edges(annotated_frame, dataset.workspace)
 
+        cv2.imshow(config.ui.window_name, annotated_frame)
+        print(
+            f"Mapped world point {config.calibration.target_world_point} "
+            f"to image point {(u, v)}"
+        )
+        
+    except Exception as e:
+        logging.exception(str(e))
+    finally:
+        logging.info('Destroying windows...')
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
 if __name__ == "__main__":
     args = parse_args()
