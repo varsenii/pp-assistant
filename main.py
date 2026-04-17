@@ -27,7 +27,7 @@ def parse_args():
 
 
 def main(dataset_name: str) -> None:
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s: %(message)s")
+    logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(levelname)s: %(message)s")
     config = load_config("pp_assistant/config/config.yaml")
 
     dataset_dir = os.path.join(config.dataset.base_path, dataset_name)
@@ -46,8 +46,8 @@ def main(dataset_name: str) -> None:
         # Initialize rectifier for undistortion
         intrinsics = np.array(config.camera.intrinsics, dtype=np.float64)
         distortion = np.array(config.camera.distortion_coeffs, dtype=np.float64)
-        logging.info(f"Camera Intrinsics:\n{intrinsics}")
-        logging.info(f"Distortion Coefficients:\n{distortion}")
+        logging.debug(f"Camera Intrinsics:\n{intrinsics}")
+        logging.debug(f"Distortion Coefficients:\n{distortion}")
         rectifier = Rectifier(intrinsics, distortion, config.camera.preview_size)
         
         # Undistort the frame
@@ -78,8 +78,6 @@ def main(dataset_name: str) -> None:
             dataset = Dataset(name=dataset_name, workspace=workspace)
             dataset.save(dataset_dir)
 
-        drawing = Drawing(config)
-
         calibrator = HomographyCalibrator(world_points=config.calibration.world_points)
         calibrator.compute_homography(dataset.workspace.corners_img)
 
@@ -93,8 +91,12 @@ def main(dataset_name: str) -> None:
             config.marker.thickness,
         )
 
+        drawing = Drawing(config, calibrator = calibrator)
+
         # Draw workspace edges
         annotated_frame = drawing.draw_workspace_edges(annotated_frame, dataset.workspace)
+
+        annotated_frame = drawing.draw_bins(annotated_frame, dataset.workspace.bins)
 
         cv2.imshow(config.ui.window_name, annotated_frame)
         print(
