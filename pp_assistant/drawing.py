@@ -1,5 +1,5 @@
 import cv2
-from pp_assistant.workspace import Workspace
+from pp_assistant.workspace.workspace import Workspace
 from pp_assistant.bin import Bin
 from pp_assistant.calibration import HomographyCalibrator
 

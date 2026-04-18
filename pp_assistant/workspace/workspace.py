@@ -5,26 +5,28 @@ from typing import Iterable, Tuple
 from pp_assistant.bin import Bin
 
 class Workspace:
-    def __init__(self, corners_world, corners_img: Iterable[Tuple[int, int]], bins: list[Bin] = None):
+    def __init__(self, corners_world, corners_img: Iterable[Tuple[int, int]], bins: list[Bin] = None, ):
         self.logger = logging.getLogger(__name__)
         self.corners_world = corners_world
         self.corners_img = corners_img
-        self.bins = bins or self._compute_bins(n_rows = 2, n_cols = 3)
+        self.bins = bins
 
     @classmethod
     def from_dict(cls, data) -> 'Workspace':
         return cls(
             corners_world = data.get('corners_world'), 
-            corners_img = data.get('corners_img')
+            corners_img = data.get('corners_img'),
+            bins = [Bin.from_dict(data = bin) for bin in data.get('bins')]
         )
     
     def to_dict(self) -> dict[str, tuple]:
         return {
             'corners_world': self.corners_world,
-            'corners_img': self.corners_img
+            'corners_img': self.corners_img,
+            'bins': [bin.__dict__ for bin in self.bins]
         }
 
-    def _compute_bins(self, n_rows, n_cols) -> list[Bin]:
+    def compute_bins(self, n_rows, n_cols) -> list[Bin]:
         top_left, top_right, bottom_right, bottom_left = self.corners_world
 
         min_x = min(top_left[0], bottom_left[0])
@@ -49,4 +51,4 @@ class Workspace:
 
             bins.append(bin)
         
-        return bins
+        self.bins = bins

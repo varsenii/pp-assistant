@@ -18,7 +18,7 @@ def _normalize_point_list(value: Sequence[Sequence[float]]) -> List[Tuple[float,
 
 @dataclass
 class DatasetConfig:
-    base_path: str = "datasets"
+    base_path: str = "data/datasets"
 
 
 @dataclass

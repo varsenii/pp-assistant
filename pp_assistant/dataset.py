@@ -1,7 +1,7 @@
 import os
 import json
 import logging
-from pp_assistant.workspace import Workspace
+from pp_assistant.workspace.workspace import Workspace
 from pp_assistant.episode import Episode
 
 
@@ -18,6 +18,7 @@ class Dataset:
 
     
     def save(self, dir: str):
+        self.logger.info(f'Saving "{self.name}" dataset to {dir}')
         os.makedirs(dir, exist_ok=True)
 
         # Save meta info
@@ -64,8 +65,9 @@ class Dataset:
 
     
     def _save_episodes(self, path):
-        if self.episodes:
-            self.logger.warning('No episodes to save')
+        if not self.episodes:
+            self.logger.info('No episodes to save')
+            return
 
         data = [e.__dict__ for e in self.episodes]
 

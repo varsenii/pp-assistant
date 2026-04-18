@@ -7,10 +7,12 @@ from pp_assistant.camera import DepthAICameraPipeline
 from pp_assistant.calibration import HomographyCalibrator
 from pp_assistant.config import load_config
 from pp_assistant.ui import PointSelectorUI
-from pp_assistant.workspace import Workspace
+from pp_assistant.workspace.workspace import Workspace
 from pp_assistant.dataset import Dataset
 from pp_assistant.drawing import Drawing
 from pp_assistant.rectifier import Rectifier
+from pp_assistant.workspace.object import Object
+from pp_assistant.interaction import UserPrompter
 
 
 def parse_args():
@@ -59,7 +61,7 @@ def main(dataset_name: str) -> None:
             dataset = Dataset.from_json(path = dataset_dir)
         
         # Use UI to select workspace corners
-        else:
+        else:            
             logging.info("No existing dataset found. Starting workspace selection.")
             selector = PointSelectorUI(
                 window_name=config.ui.window_name,
@@ -73,8 +75,13 @@ def main(dataset_name: str) -> None:
                     " Exiting without computing homography."
                 )
                 return
-        
+            
+            prompter = UserPrompter()
+            n_rows, n_cols = prompter.ask_workspace_grid()
+
             workspace = Workspace(config.calibration.world_points, image_points)
+            workspace.compute_bins(n_rows = n_rows, n_cols = n_cols)
+
             dataset = Dataset(name=dataset_name, workspace=workspace)
             dataset.save(dataset_dir)
 
@@ -93,10 +100,12 @@ def main(dataset_name: str) -> None:
 
         drawing = Drawing(config, calibrator = calibrator)
 
-        # Draw workspace edges
+        # Draw workspace
         annotated_frame = drawing.draw_workspace_edges(annotated_frame, dataset.workspace)
-
         annotated_frame = drawing.draw_bins(annotated_frame, dataset.workspace.bins)
+
+        # Define and draw an object
+        
 
         cv2.imshow(config.ui.window_name, annotated_frame)
         print(
