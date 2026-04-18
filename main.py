@@ -80,7 +80,7 @@ def main(dataset_name: str) -> None:
             n_rows, n_cols = prompter.ask_workspace_grid()
 
             workspace = Workspace(config.calibration.world_points, image_points)
-            workspace.compute_bins(n_rows = n_rows, n_cols = n_cols)
+            workspace.compute_cells(n_rows = n_rows, n_cols = n_cols)
 
             dataset = Dataset(name=dataset_name, workspace=workspace)
             dataset.save(dataset_dir)
@@ -102,7 +102,7 @@ def main(dataset_name: str) -> None:
 
         # Draw workspace
         annotated_frame = drawing.draw_workspace_edges(annotated_frame, dataset.workspace)
-        annotated_frame = drawing.draw_bins(annotated_frame, dataset.workspace.bins)
+        annotated_frame = drawing.draw_cels(annotated_frame, dataset.workspace.cells)
 
         # Define and draw an object
         

@@ -2,31 +2,31 @@ import logging
 import numpy as np
 from typing import Iterable, Tuple
 
-from pp_assistant.workspace.bin import Bin
+from pp_assistant.workspace.cell import Cell
 
 class Workspace:
-    def __init__(self, corners_world, corners_img: Iterable[Tuple[int, int]], bins: list[Bin] = None, ):
+    def __init__(self, corners_world, corners_img: Iterable[Tuple[int, int]], cells: list[Cell] = None, ):
         self.logger = logging.getLogger(__name__)
         self.corners_world = corners_world
         self.corners_img = corners_img
-        self.bins = bins
+        self.cells = cells
 
     @classmethod
     def from_dict(cls, data) -> 'Workspace':
         return cls(
             corners_world = data.get('corners_world'), 
             corners_img = data.get('corners_img'),
-            bins = [Bin.from_dict(data = bin) for bin in data.get('bins')]
+            cells = [Cell.from_dict(data = cell) for cell in data.get('cells')]
         )
     
     def to_dict(self) -> dict[str, tuple]:
         return {
             'corners_world': self.corners_world,
             'corners_img': self.corners_img,
-            'bins': [bin.__dict__ for bin in self.bins]
+            'cells': [cell.__dict__ for cell in self.cells]
         }
 
-    def compute_bins(self, n_rows, n_cols) -> list[Bin]:
+    def compute_cells(self, n_rows, n_cols) -> list[Cell]:
         top_left, top_right, bottom_right, bottom_left = self.corners_world
 
         min_x = min(top_left[0], bottom_left[0])
@@ -36,19 +36,19 @@ class Workspace:
         x_coordinates = np.linspace(min_x, max_x, num=n_cols+1)
         y_coordinates = np.linspace(min_y, max_y, num=n_rows+1)
         
-        n_bins = n_rows * n_cols
+        n_cells = n_rows * n_cols
 
-        bins = []
-        for i in range(n_bins):
+        cells = []
+        for i in range(n_cells):
             idx_x = i % n_cols
             idx_y = i // n_cols
-            bin_top_left = (x_coordinates[idx_x], y_coordinates[idx_y])
-            bin_top_right = (x_coordinates[idx_x + 1], y_coordinates[idx_y])
-            bin_bottom_right = (x_coordinates[idx_x + 1], y_coordinates[idx_y + 1])
-            bin_bottom_left = (x_coordinates[idx_x], y_coordinates[idx_y + 1])
+            cell_top_left = (x_coordinates[idx_x], y_coordinates[idx_y])
+            cell_top_right = (x_coordinates[idx_x + 1], y_coordinates[idx_y])
+            cell_bottom_right = (x_coordinates[idx_x + 1], y_coordinates[idx_y + 1])
+            cell_bottom_left = (x_coordinates[idx_x], y_coordinates[idx_y + 1])
 
-            bin = Bin(id=i, corners=[bin_top_left, bin_top_right, bin_bottom_right, bin_bottom_left])
+            cell = Cell(id=i, corners=[cell_top_left, cell_top_right, cell_bottom_right, cell_bottom_left])
 
-            bins.append(bin)
+            cells.append(cell)
         
-        self.bins = bins
+        self.cells = cells

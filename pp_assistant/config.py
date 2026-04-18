@@ -57,7 +57,7 @@ class MarkerConfig:
 
 
 @dataclass
-class BinLabelConfig:
+class CellLabelConfig:
     font_scale: float = 0.5
     font_thickness: int = 1
     bg_padding: int = 5
@@ -68,7 +68,7 @@ class BinLabelConfig:
 class DrawingConfig:
     workspace_color: Tuple[int, int, int] = (255, 0, 0)
     workspace_thickness: int = 2
-    bin_label: BinLabelConfig = field(default_factory=BinLabelConfig)
+    cell_label: CellLabelConfig = field(default_factory=CellLabelConfig)
 
 
 @dataclass
@@ -133,18 +133,18 @@ def load_config(file_path: str = "config.yaml") -> AppConfig:
         thickness=int(marker_data.get("thickness", -1)),
     )
 
-    bin_label_data: Dict[str, Any] = drawing_data.get("bin_label", {})
-    bin_label = BinLabelConfig(
-        font_scale=float(bin_label_data.get("font_scale", 0.5)),
-        font_thickness=int(bin_label_data.get("font_thickness", 1)),
-        bg_padding=int(bin_label_data.get("bg_padding", 5)),
-        show_label=bool(bin_label_data.get("show_label", True)),
+    cell_label_data: Dict[str, Any] = drawing_data.get("cell_label", {})
+    cell_label = CellLabelConfig(
+        font_scale=float(cell_label_data.get("font_scale", 0.5)),
+        font_thickness=int(cell_label_data.get("font_thickness", 1)),
+        bg_padding=int(cell_label_data.get("bg_padding", 5)),
+        show_label=bool(cell_label_data.get("show_label", True)),
     )
 
     drawing = DrawingConfig(
         workspace_color=_normalize_tuple(drawing_data.get("workspace_color", (255, 0, 0)), 3),
         workspace_thickness=int(drawing_data.get("workspace_thickness", 2)),
-        bin_label=bin_label,
+        cell_label=cell_label,
     )
 
     return AppConfig(dataset=dataset, camera=camera, ui=ui, calibration=calibration, marker=marker, drawing=drawing)

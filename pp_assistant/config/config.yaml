@@ -39,7 +39,7 @@ marker:
 drawing:
   workspace_color: [255, 0, 0]
   workspace_thickness: 2
-  bin_label:
+  cell_label:
     font_scale: 0.5
     font_thickness: 1
     bg_padding: 5

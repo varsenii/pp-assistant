@@ -3,25 +3,20 @@ from typing import Tuple
 
 
 class UserPrompter:
-    def __init__ (self, n_rows: int = 2, n_cols: int = 3):
-        self.n_rows = n_rows
-        self.n_cols = n_cols
+    def __init__ (self):
         self.logger = logging.getLogger(__name__)
     
 
     def ask_workspace_grid(self) -> Tuple[int, int]:
-        self.logger.info('Workspace splig configuration:')
-        n_rows = self._prompt_positive_number('number of rows', self.n_rows)
-        n_cols = self._prompt_positive_number('number of columns', self.n_cols)
+        self.logger.info('Workspace split configuration:')
+        n_rows = self._prompt_positive_number('number of rows')
+        n_cols = self._prompt_positive_number('number of columns')
         return n_rows, n_cols
 
     
-    def _prompt_positive_number(self, label: str, default: str):
+    def _prompt_positive_number(self, label: str):
         while True:
-            raw = input(f'Enter {label} [{default}]: ').strip()
-
-            if raw == '':
-                return default
+            raw = input(f'Enter {label}: ').strip()
             
             try:
                 value = int(raw)

@@ -1,6 +1,6 @@
 import cv2
 from pp_assistant.workspace.workspace import Workspace
-from pp_assistant.workspace.bin import Bin
+from pp_assistant.workspace.cell import Cell
 from pp_assistant.calibration import HomographyCalibrator
 
 
@@ -39,12 +39,12 @@ class Drawing:
 
         return annotated_image
 
-    def draw_bins(self, image, bins: list[Bin]):
+    def draw_cels(self, image, cells: list[Cell]):
         annotated_image = image.copy()
 
-        for bin in bins:
+        for cell in cells:
             corners = [
-                self.calibrator.world_to_image(*coordinates) for coordinates in bin.corners
+                self.calibrator.world_to_image(*coordinates) for coordinates in cell.corners
             ]
 
             # Draw lines between consecutive corners
@@ -59,20 +59,20 @@ class Drawing:
                     self.config.drawing.workspace_thickness,
                 )
 
-            # Draw bin ID label in top-left corner
-            if self.config.drawing.bin_label.show_label:
-                bin_label = self.config.drawing.bin_label
+            # Draw cell ID label in top-left corner
+            if self.config.drawing.cell_label.show_label:
+                cell_label = self.config.drawing.cell_label
                 top_left = corners[0]
                 
                 # Get text size
-                text = str(bin.id)
+                text = str(cell.id)
                 font = cv2.FONT_HERSHEY_SIMPLEX
                 (text_width, text_height), baseline = cv2.getTextSize(
-                    text, font, bin_label.font_scale, bin_label.font_thickness
+                    text, font, cell_label.font_scale, cell_label.font_thickness
                 )
                 
                 # Calculate background rectangle
-                padding = bin_label.bg_padding
+                padding = cell_label.bg_padding
                 rect_top_left = (
                     top_left[0] + padding,
                     top_left[1] + padding,
@@ -101,9 +101,9 @@ class Drawing:
                     text,
                     text_position,
                     font,
-                    bin_label.font_scale,
+                    cell_label.font_scale,
                     (255, 255, 255),  # Black text
-                    bin_label.font_thickness,
+                    cell_label.font_thickness,
                 )
 
         return annotated_image
