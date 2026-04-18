@@ -1,7 +1,11 @@
 import cv2
+import logging
+import math
+
 from pp_assistant.workspace.workspace import Workspace
 from pp_assistant.workspace.cell import Cell
 from pp_assistant.calibration import HomographyCalibrator
+from pp_assistant.workspace.pose import Pose
 
 
 class Drawing:
@@ -10,6 +14,7 @@ class Drawing:
     def __init__(self, config, calibrator: HomographyCalibrator):
         self.config = config
         self.calibrator = calibrator
+        self.logger = logging.getLogger(__name__)
 
     def draw_workspace_edges(self, image, workspace: Workspace):
         """
@@ -107,3 +112,31 @@ class Drawing:
                 )
 
         return annotated_image
+
+    def draw_poses(self, image, poses:list[Pose]):
+        annotated_frame = image.copy()
+
+        for pose in poses:
+
+            u, v = self.calibrator.world_to_image(pose.x, pose.y)
+            cv2.circle(
+                annotated_frame,
+                (u, v),
+                self.config.marker.radius,
+                self.config.marker.color,
+                self.config.marker.thickness,
+            )
+            
+            # Draw yaw as a small arrow
+            arrow_length = 10
+            end_u = int(u + arrow_length * math.cos(pose.yaw))
+            end_v = int(v + arrow_length * math.sin(pose.yaw))
+            cv2.arrowedLine(
+                annotated_frame,
+                (u, v),
+                (end_u, end_v),
+                self.config.marker.color,
+                2,
+            )
+        
+        return annotated_frame
