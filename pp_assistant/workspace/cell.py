@@ -1,14 +1,22 @@
+from enum import Enum, auto
+from typing import Iterable, Tuple
+
+
+class CellSplit(str, Enum):
+    TRAINING = 'training'
+    EVALUATION = 'evaluation'
+
+
 class Cell:
-    def __init__(self, id, corners):
+    def __init__(self, id: int, corners = Iterable[Tuple[float, float]], split: CellSplit = None):
         self.id = id
         self.corners = corners
+        self.split = split
 
     @classmethod
     def from_dict(cls, data: str) -> "Cell":
         return cls(
             id = data.get('id'), 
-            corners = data.get('corners')
+            corners = data.get('corners'),
+            split = data.get('split')
         )
-
-    def __repr__(self):
-        return f"Cell(id={self.id}, corners={len(self.corners)})"

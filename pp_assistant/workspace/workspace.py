@@ -2,7 +2,7 @@ import logging
 import numpy as np
 from typing import Iterable, Tuple
 
-from pp_assistant.workspace.cell import Cell
+from pp_assistant.workspace.cell import Cell, CellSplit
 
 class Workspace:
     def __init__(self, corners_world, corners_img: Iterable[Tuple[int, int]], cells: list[Cell] = None, ):
@@ -52,3 +52,10 @@ class Workspace:
             cells.append(cell)
         
         self.cells = cells
+    
+    def mark_evaluation_cells(self, ids: list[int]):
+        for cell in self.cells:
+            if cell.id in ids:
+                cell.split = CellSplit.EVALUATION
+            else:
+                cell.split = CellSplit.TRAINING

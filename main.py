@@ -55,10 +55,12 @@ def main(dataset_name: str) -> None:
         # Undistort the frame
         frame = rectifier.undistort_frame(frame)
         
+        is_dataset_loaded = False
         # Load the dataset if exists
         if os.path.exists(dataset_dir):
             logging.info(f"Existing dataset found at {dataset_dir}. Loading workspace corners.")
             dataset = Dataset.from_json(path = dataset_dir)
+            is_dataset_loaded = True
         
         # Use UI to select workspace corners
         else:            
@@ -103,15 +105,14 @@ def main(dataset_name: str) -> None:
         # Draw workspace
         annotated_frame = drawing.draw_workspace_edges(annotated_frame, dataset.workspace)
         annotated_frame = drawing.draw_cels(annotated_frame, dataset.workspace.cells)
-
-        # Define and draw an object
-        
-
         cv2.imshow(config.ui.window_name, annotated_frame)
-        print(
-            f"Mapped world point {config.calibration.target_world_point} "
-            f"to image point {(u, v)}"
-        )
+
+        # Ask the evaulation cells
+        if not is_dataset_loaded:
+            cell_ids = prompter.ask_evaluation_cells()
+            dataset.workspace.mark_evaluation_cells(ids = cell_ids)
+            dataset.save(dataset_dir)
+
         
     except Exception as e:
         logging.exception(str(e))
