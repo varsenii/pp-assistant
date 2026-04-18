@@ -1,6 +1,6 @@
 import cv2
 from pp_assistant.workspace.workspace import Workspace
-from pp_assistant.bin import Bin
+from pp_assistant.workspace.bin import Bin
 from pp_assistant.calibration import HomographyCalibrator
 
 
@@ -57,6 +57,53 @@ class Drawing:
                     end_point,
                     self.config.drawing.workspace_color,
                     self.config.drawing.workspace_thickness,
+                )
+
+            # Draw bin ID label in top-left corner
+            if self.config.drawing.bin_label.show_label:
+                bin_label = self.config.drawing.bin_label
+                top_left = corners[0]
+                
+                # Get text size
+                text = str(bin.id)
+                font = cv2.FONT_HERSHEY_SIMPLEX
+                (text_width, text_height), baseline = cv2.getTextSize(
+                    text, font, bin_label.font_scale, bin_label.font_thickness
+                )
+                
+                # Calculate background rectangle
+                padding = bin_label.bg_padding
+                rect_top_left = (
+                    top_left[0] + padding,
+                    top_left[1] + padding,
+                )
+                rect_bottom_right = (
+                    top_left[0] + padding + text_width + padding,
+                    top_left[1] + padding + text_height + baseline + padding,
+                )
+                
+                # Draw background rectangle
+                cv2.rectangle(
+                    annotated_image,
+                    rect_top_left,
+                    rect_bottom_right,
+                    self.config.drawing.workspace_color,
+                    -1,  # Filled rectangle
+                )
+                
+                # Draw text
+                text_position = (
+                    top_left[0] + 2 * padding,
+                    top_left[1] + padding + text_height,
+                )
+                cv2.putText(
+                    annotated_image,
+                    text,
+                    text_position,
+                    font,
+                    bin_label.font_scale,
+                    (255, 255, 255),  # Black text
+                    bin_label.font_thickness,
                 )
 
         return annotated_image

@@ -2,7 +2,7 @@ import logging
 import numpy as np
 from typing import Iterable, Tuple
 
-from pp_assistant.bin import Bin
+from pp_assistant.workspace.bin import Bin
 
 class Workspace:
     def __init__(self, corners_world, corners_img: Iterable[Tuple[int, int]], bins: list[Bin] = None, ):
@@ -41,7 +41,7 @@ class Workspace:
         bins = []
         for i in range(n_bins):
             idx_x = i % n_cols
-            idx_y = i % n_rows
+            idx_y = i // n_cols
             bin_top_left = (x_coordinates[idx_x], y_coordinates[idx_y])
             bin_top_right = (x_coordinates[idx_x + 1], y_coordinates[idx_y])
             bin_bottom_right = (x_coordinates[idx_x + 1], y_coordinates[idx_y + 1])
