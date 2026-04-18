@@ -27,7 +27,6 @@ class Drawing:
         Returns:
             The annotated image.
         """
-        annotated_image = image.copy()
         corners =  workspace.corners_img
         
         # Draw lines between consecutive corners
@@ -35,18 +34,16 @@ class Drawing:
             start_point = corners[i]
             end_point = corners[(i + 1) % len(corners)]  # Wrap around to first point
             cv2.line(
-                annotated_image,
+                image,
                 start_point,
                 end_point,
                 self.config.drawing.workspace_color,
                 self.config.drawing.workspace_thickness,
             )
 
-        return annotated_image
+        return image
 
     def draw_cels(self, image, cells: list[Cell]):
-        annotated_image = image.copy()
-
         for cell in cells:
             corners = [
                 self.calibrator.world_to_image(*coordinates) for coordinates in cell.corners
@@ -57,7 +54,7 @@ class Drawing:
                 start_point = corners[i]
                 end_point = corners[(i + 1) % len(corners)]  # Wrap around to first point
                 cv2.line(
-                    annotated_image,
+                    image,
                     start_point,
                     end_point,
                     self.config.drawing.workspace_color,
@@ -89,7 +86,7 @@ class Drawing:
                 
                 # Draw background rectangle
                 cv2.rectangle(
-                    annotated_image,
+                    image,
                     rect_top_left,
                     rect_bottom_right,
                     self.config.drawing.workspace_color,
@@ -102,7 +99,7 @@ class Drawing:
                     top_left[1] + padding + text_height,
                 )
                 cv2.putText(
-                    annotated_image,
+                    image,
                     text,
                     text_position,
                     font,
@@ -111,32 +108,35 @@ class Drawing:
                     cell_label.font_thickness,
                 )
 
-        return annotated_image
+        return image
+    
 
     def draw_poses(self, image, poses:list[Pose]):
-        annotated_frame = image.copy()
-
         for pose in poses:
+            image = self.draw_pose(image = image, pose = pose)
+        return image
+    
 
-            u, v = self.calibrator.world_to_image(pose.x, pose.y)
-            cv2.circle(
-                annotated_frame,
-                (u, v),
-                self.config.marker.radius,
-                self.config.marker.color,
-                self.config.marker.thickness,
-            )
-            
-            # Draw yaw as a small arrow
-            arrow_length = 10
-            end_u = int(u + arrow_length * math.cos(pose.yaw))
-            end_v = int(v + arrow_length * math.sin(pose.yaw))
-            cv2.arrowedLine(
-                annotated_frame,
-                (u, v),
-                (end_u, end_v),
-                self.config.marker.color,
-                2,
-            )
+    def draw_pose(self, image, pose: Pose):
+        u, v = self.calibrator.world_to_image(pose.x, pose.y)
+        cv2.circle(
+            image,
+            (u, v),
+            self.config.marker.radius,
+            self.config.marker.color,
+            self.config.marker.thickness,
+        )
         
-        return annotated_frame
+        # Draw yaw as a small arrow
+        arrow_length = 10
+        end_u = int(u + arrow_length * math.cos(pose.yaw))
+        end_v = int(v + arrow_length * math.sin(pose.yaw))
+        cv2.arrowedLine(
+            image,
+            (u, v),
+            (end_u, end_v),
+            self.config.marker.color,
+            2,
+        )
+    
+        return image

@@ -105,13 +105,17 @@ def main(dataset_name: str) -> None:
         max_y = dataset.workspace.corners_world[3][1]
         pose_sampler = PoeSampler(max_x = max_x, max_y = max_y)
 
-        # Draw object poses
-        poses = pose_sampler.sobol_sample(100)
-        annotated_frame = drawing.draw_poses(annotated_frame, poses = poses)
+        # Draw object poses incrementally every 0.5 seconds
+        poses = pose_sampler.sobol_sample(num_samples = 100)
+        for pose in poses:
+            annotated_frame = drawing.draw_pose(annotated_frame, pose)
+            cv2.imshow(config.ui.window_name, annotated_frame)
+            
+            key = cv2.waitKey(330)
+            if key != -1:
+                break
 
-        cv2.imshow(config.ui.window_name, annotated_frame)
-
-        # Ask the evaulation cells
+        # Ask the evaluation cells
         if not is_dataset_loaded:
             cell_ids = prompter.ask_evaluation_cells()
             dataset.workspace.mark_evaluation_cells(ids = cell_ids)
