@@ -13,6 +13,21 @@ class UserPrompter:
         n_cols = self._prompt_positive_number('number of columns', interruptable = False)
         return n_rows, n_cols
 
+    def ask_excluded_cells(self) -> list[int]:
+        self.logger.info('Specify the cells you want to exlude')
+        self.logger.info('Press "Enter" when finished')
+
+        cell_ids = []
+        while True:
+            cell_id = self._prompt_positive_number('cell ID', interruptable = True)
+
+            if not cell_id:
+                break
+            
+            cell_ids.append(cell_id)
+        
+        return cell_ids
+
     def ask_evaluation_cells(self) -> list[int]:
         self.logger.info('Specify the cells you want to hold out for evaluation')
         self.logger.info('Press "Enter" when finished')

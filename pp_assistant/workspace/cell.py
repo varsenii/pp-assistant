@@ -5,6 +5,7 @@ from typing import Iterable, Tuple
 class CellSplit(str, Enum):
     TRAINING = 'training'
     EVALUATION = 'evaluation'
+    EXCLUDED = 'excluded'
 
 
 class Cell:

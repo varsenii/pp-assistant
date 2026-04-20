@@ -111,12 +111,15 @@ def main(dataset_name: str) -> None:
             annotated_frame = drawing.draw_pose(annotated_frame, pose)
             cv2.imshow(config.ui.window_name, annotated_frame)
             
-            key = cv2.waitKey(330)
+            key = cv2.waitKey(100)
             if key != -1:
                 break
 
-        # Ask the evaluation cells
+        # Ask the excluded and evaluation cells
         if not is_dataset_loaded:
+            cell_ids = prompter.ask_excluded_cells()
+            dataset.workspace.mark_excluded_cells(ids = cell_ids)
+
             cell_ids = prompter.ask_evaluation_cells()
             dataset.workspace.mark_evaluation_cells(ids = cell_ids)
             dataset.save(dataset_dir)

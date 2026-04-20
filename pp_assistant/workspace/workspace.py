@@ -47,7 +47,11 @@ class Workspace:
             cell_bottom_right = (x_coordinates[idx_x + 1], y_coordinates[idx_y + 1])
             cell_bottom_left = (x_coordinates[idx_x], y_coordinates[idx_y + 1])
 
-            cell = Cell(id=i, corners=[cell_top_left, cell_top_right, cell_bottom_right, cell_bottom_left])
+            cell = Cell(
+                id = i, 
+                corners = [cell_top_left, cell_top_right, cell_bottom_right, cell_bottom_left],
+                split = CellSplit.TRAINING
+            )
 
             cells.append(cell)
         
@@ -57,5 +61,8 @@ class Workspace:
         for cell in self.cells:
             if cell.id in ids:
                 cell.split = CellSplit.EVALUATION
-            else:
-                cell.split = CellSplit.TRAINING
+    
+    def mark_excluded_cells(self, ids: list[int]):
+        for cell in self.cells:
+            if cell.id in ids:
+                cell.split = CellSplit.EXCLUDED
