@@ -59,7 +59,8 @@ class PoeSampler:
 
             # Filter invalid poses
             for pose in poses:
-                if self.pose_validator.is_point_in_excluded_cell((pose[0], pose[1])):
+                position = (pose[0], pose[1])
+                if not self.pose_validator.is_point_in_training_cell(position):
                     continue
 
                 valid_poses.append(pose)
