@@ -3,13 +3,17 @@ import logging
 from scipy.stats import qmc
 
 from .pose import Pose
+from .pose_validation import PoseValidator
+from .workspace import Workspace
 
 
 class PoeSampler:
-    def __init__(self, max_x, max_y):
-        self.max_x = max_x
-        self.max_y = max_y
+    def __init__(self, workspace: Workspace):
+        self.workspace = workspace
+        self.max_x = self.workspace.corners_world[1][0]
+        self.max_y = self.workspace.corners_world[3][1]
         self.logger = logging.getLogger(__name__)
+        self.pose_validator = PoseValidator(workspace = self.workspace)
     
     def uniform_sample(self, num_samples) -> list[Pose]:
         x_samples = np.random.uniform(low = 0, high = self.max_x, size = num_samples)
@@ -41,16 +45,30 @@ class PoeSampler:
         return poses
     
     def sobol_sample(self, num_samples) -> list[Pose]:
-        sampler = qmc.Sobol(d=3, scramble=True)
-        samples = sampler.random(num_samples)
+        batch_size = max(64, num_samples)
+        valid_poses = []
 
-        # scale to your bounds
-        l_bounds = [0, 0, 0]
-        u_bounds = [self.max_x, self.max_y, 360]
-        poses = qmc.scale(samples, l_bounds, u_bounds)
+        while len(valid_poses) < num_samples:
+            sampler = qmc.Sobol(d=3, scramble=True)
+            samples = sampler.random(batch_size)
+
+            # scale to your bounds
+            l_bounds = [0, 0, 0]
+            u_bounds = [self.max_x, self.max_y, 360]
+            poses = qmc.scale(samples, l_bounds, u_bounds)
+
+            # Filter invalid poses
+            for pose in poses:
+                if self.pose_validator.is_point_in_excluded_cell((pose[0], pose[1])):
+                    continue
+
+                valid_poses.append(pose)
+
+                if len(valid_poses) >= num_samples:
+                    break
 
         return [
-            Pose(x = x, y = y, yaw = yaw) for x, y, yaw in poses
+            Pose(x = x, y = y, yaw = yaw) for x, y, yaw in valid_poses
         ]
 
         

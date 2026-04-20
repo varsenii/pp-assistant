@@ -101,9 +101,7 @@ def main(dataset_name: str) -> None:
         annotated_frame = drawing.draw_cels(annotated_frame, dataset.workspace.cells)
 
         # Sample object poses
-        max_x = dataset.workspace.corners_world[1][0]
-        max_y = dataset.workspace.corners_world[3][1]
-        pose_sampler = PoeSampler(max_x = max_x, max_y = max_y)
+        pose_sampler = PoeSampler(workspace = dataset.workspace)
 
         # Draw object poses incrementally every 0.5 seconds
         poses = pose_sampler.sobol_sample(num_samples = 100)
