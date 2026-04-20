@@ -104,9 +104,9 @@ def main(dataset_name: str) -> None:
         pose_sampler = PoeSampler(workspace = dataset.workspace)
 
         # Draw object poses incrementally every 0.5 seconds
-        poses = pose_sampler.sobol_sample(num_samples = 100)
-        for pose in poses:
-            annotated_frame = drawing.draw_pose(annotated_frame, pose)
+        objects = pose_sampler.sobol_sample(num_samples = 100, num_objects = 3)
+        for object in objects:
+            annotated_frame = drawing.draw_object(annotated_frame, object)
             cv2.imshow(config.ui.window_name, annotated_frame)
             
             key = cv2.waitKey(100)

@@ -5,6 +5,7 @@ from scipy.stats import qmc
 from .pose import Pose
 from .pose_validation import PoseValidator
 from .workspace import Workspace
+from .object import Object
 
 
 class PoeSampler:
@@ -44,32 +45,36 @@ class PoeSampler:
         
         return poses
     
-    def sobol_sample(self, num_samples) -> list[Pose]:
+    def sobol_sample(self, num_samples, num_objects) -> list[Object]:
         batch_size = max(64, num_samples)
-        valid_poses = []
+        valid_samples = []
 
-        while len(valid_poses) < num_samples:
-            sampler = qmc.Sobol(d=3, scramble=True)
-            samples = sampler.random(batch_size)
+        while len(valid_samples) < num_samples:
+            sampler = qmc.Sobol(d=4, scramble=True)
+            samples_raw = sampler.random(batch_size)
 
             # scale to your bounds
-            l_bounds = [0, 0, 0]
-            u_bounds = [self.max_x, self.max_y, 360]
-            poses = qmc.scale(samples, l_bounds, u_bounds)
+            l_bounds = [0, 0, 0, 0]
+            u_bounds = [self.max_x, self.max_y, 360, num_objects + 1]
+            samples = qmc.scale(samples_raw, l_bounds, u_bounds)
 
             # Filter invalid poses
-            for pose in poses:
-                position = (pose[0], pose[1])
+            for sample in samples:
+                position = (sample[0], sample[1])
                 if not self.pose_validator.is_point_in_training_cell(position):
                     continue
 
-                valid_poses.append(pose)
+                valid_samples.append(sample)
 
-                if len(valid_poses) >= num_samples:
+                if len(valid_samples) >= num_samples:
                     break
 
         return [
-            Pose(x = x, y = y, yaw = yaw) for x, y, yaw in valid_poses
+            Object(
+                id = int(np.round(id)),
+                pose = Pose(x = x, y = y, yaw = yaw)
+            ) 
+            for x, y, yaw, id in valid_samples
         ]
 
         

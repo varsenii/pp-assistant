@@ -20,6 +20,18 @@ def _normalize_point_list(value: Sequence[Sequence[float]]) -> List[Tuple[float,
 class DatasetConfig:
     base_path: str = "data/datasets"
 
+@dataclass
+class ObjectConfig:
+    id: int
+    label: str
+    width: float
+    height: float
+    color: Tuple[int, int, int]
+
+@dataclass
+class ObjectsConfig:
+    objects: List[ObjectConfig] = field(default_factory=list)
+
 
 @dataclass
 class CameraConfig:
@@ -74,6 +86,7 @@ class DrawingConfig:
 @dataclass
 class AppConfig:
     dataset: DatasetConfig = field(default_factory=DatasetConfig)
+    objects: ObjectsConfig = field(default_factory=ObjectsConfig)
     camera: CameraConfig = field(default_factory=CameraConfig)
     ui: UIConfig = field(default_factory=UIConfig)
     calibration: CalibrationConfig = field(default_factory=CalibrationConfig)
@@ -99,6 +112,19 @@ def load_config(file_path: str = "config.yaml") -> AppConfig:
     dataset = DatasetConfig(
         base_path=str(dataset_data.get("base_path", "/pp_assistant/datasets"))
     )
+
+    objects_data: List[Dict[str, Any]] = raw_config.get("objects", [])
+    objects_list = [
+        ObjectConfig(
+            id=int(obj.get("id", 0)),
+            label=str(obj.get("label", "")),
+            width=float(obj.get("width", 0.0)),
+            height=float(obj.get("height", 0.0)),
+            color=_normalize_tuple(obj.get("color", (0, 0, 0)), 3),
+        )
+        for obj in objects_data
+    ]
+    objects = ObjectsConfig(objects=objects_list)
 
     camera = CameraConfig(
         preview_size=_normalize_tuple(camera_data.get("preview_size", (640, 480)), 2),
@@ -147,4 +173,4 @@ def load_config(file_path: str = "config.yaml") -> AppConfig:
         cell_label=cell_label,
     )
 
-    return AppConfig(dataset=dataset, camera=camera, ui=ui, calibration=calibration, marker=marker, drawing=drawing)
+    return AppConfig(dataset=dataset, camera=camera, ui=ui, calibration=calibration, marker=marker, drawing=drawing, objects=objects)

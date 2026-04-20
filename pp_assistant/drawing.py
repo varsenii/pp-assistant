@@ -6,6 +6,7 @@ from pp_assistant.workspace.workspace import Workspace
 from pp_assistant.workspace.cell import Cell
 from pp_assistant.calibration import HomographyCalibrator
 from pp_assistant.workspace.pose import Pose
+from pp_assistant.workspace.object import Object
 
 
 class Drawing:
@@ -113,17 +114,25 @@ class Drawing:
 
     def draw_poses(self, image, poses:list[Pose]):
         for pose in poses:
-            image = self.draw_pose(image = image, pose = pose)
+            image = self.draw_object(image = image, pose = pose)
         return image
     
 
-    def draw_pose(self, image, pose: Pose):
+    def draw_object(self, image, object: Object):
+        pose = object.pose
+        color = self.config.marker.color
+
+        for obj_config in self.config.objects.objects:
+            if obj_config.id == object.id:
+                color = obj_config.color
+                break
+
         u, v = self.calibrator.world_to_image(pose.x, pose.y)
         cv2.circle(
             image,
             (u, v),
             self.config.marker.radius,
-            self.config.marker.color,
+            color,
             self.config.marker.thickness,
         )
         
@@ -135,7 +144,7 @@ class Drawing:
             image,
             (u, v),
             (end_u, end_v),
-            self.config.marker.color,
+            color,
             2,
         )
     

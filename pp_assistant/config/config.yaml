@@ -5,9 +5,22 @@ datasets:
   base_path: pp_assistant/data/datasets
 
 objects:
-  - red_block:
+  - id: 0
+    label: red_block
     width: 2.7
     height: 5.4
+    color: [0, 0, 255]
+  - id: 1
+    label: yellow_block
+    width: 3.0
+    height: 6.2
+    color: [255, 255, 255]
+  - id: 2
+    label: green_block
+    width: 3.0
+    height: 3.0
+    color: [0, 255, 0]
+
 
 camera:
   preview_size: [640, 480]
