@@ -4,7 +4,7 @@ import numpy as np
 import argparse
 import os
 
-from pp_assistant.camera import DepthAICameraPipeline
+from pp_assistant.camera.oak_d import DepthAICameraPipeline
 from pp_assistant.calibration import HomographyCalibrator
 from pp_assistant.config import load_config
 from pp_assistant.ui import PointSelectorUI
