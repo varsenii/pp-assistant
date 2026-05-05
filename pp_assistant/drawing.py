@@ -112,9 +112,9 @@ class Drawing:
         return image
     
 
-    def draw_poses(self, image, poses:list[Pose]):
-        for pose in poses:
-            image = self.draw_object(image = image, pose = pose)
+    def draw_objects(self, image, objects:list[Object]):
+        for object in objects:
+            image = self.draw_object(image = image, object = object)
         return image
     
 

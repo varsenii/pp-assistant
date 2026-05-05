@@ -9,12 +9,12 @@ from pp_assistant.calibration import HomographyCalibrator
 from pp_assistant.config import load_config
 from pp_assistant.ui import PointSelectorUI
 from pp_assistant.workspace.workspace import Workspace
-from pp_assistant.dataset import Dataset
+from pp_assistant.dataset.dataset import Dataset
 from pp_assistant.drawing import Drawing
 from pp_assistant.rectifier import Rectifier
 from pp_assistant.workspace.object import Object
 from pp_assistant.interaction import UserPrompter
-from pp_assistant.workspace.sampling import PoeSampler
+from pp_assistant.workspace.sampling import EpisodeGenerator
 
 
 def parse_args():
@@ -96,20 +96,20 @@ def main(dataset_name: str) -> None:
         drawing = Drawing(config, calibrator = calibrator)
 
         # Draw workspace
-        annotated_frame = frame.copy()
-        annotated_frame = drawing.draw_workspace_edges(annotated_frame, dataset.workspace)
-        annotated_frame = drawing.draw_cels(annotated_frame, dataset.workspace.cells)
+        frame_scene = drawing.draw_workspace_edges(frame, dataset.workspace)
+        frame_scene = drawing.draw_cels(frame_scene, dataset.workspace.cells)
 
         # Sample object poses
-        pose_sampler = PoeSampler(workspace = dataset.workspace)
+        pose_sampler = EpisodeGenerator(workspace = dataset.workspace)
 
         # Draw object poses incrementally every 0.5 seconds
-        objects = pose_sampler.sobol_sample(num_samples = 100, num_objects = 3)
-        for object in objects:
-            annotated_frame = drawing.draw_object(annotated_frame, object)
-            cv2.imshow(config.ui.window_name, annotated_frame)
+        episodes = pose_sampler.generate_episodes(num_episodes = 100, max_num_objects = 3)
+        for episode in episodes:
+            frame_episode = frame_scene.copy()
+            frame_episode = drawing.draw_objects(frame_episode, objects = episode.objects)
+            cv2.imshow(config.ui.window_name, frame_episode)
             
-            key = cv2.waitKey(100)
+            key = cv2.waitKey(1000)
             if key != -1:
                 break
 

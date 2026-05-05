@@ -2,7 +2,7 @@ import os
 import json
 import logging
 from pp_assistant.workspace.workspace import Workspace
-from pp_assistant.episode import Episode
+from pp_assistant.dataset.episode import Episode
 
 
 META_FILE = "info.json"
