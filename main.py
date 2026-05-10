@@ -44,83 +44,101 @@ def main(dataset_name: str) -> None:
         )
         camera_pipeline.build_pipeline()
 
-        with camera_pipeline as pipeline:
-            frame = pipeline.get_frame()
-
         # Initialize rectifier for undistortion
         intrinsics = np.array(config.camera.intrinsics, dtype=np.float64)
         distortion = np.array(config.camera.distortion_coeffs, dtype=np.float64)
         logging.debug(f"Camera Intrinsics:\n{intrinsics}")
         logging.debug(f"Distortion Coefficients:\n{distortion}")
         rectifier = Rectifier(intrinsics, distortion, config.camera.preview_size)
-        
-        # Undistort the frame
-        frame = rectifier.undistort_frame(frame)
-        
-        is_dataset_loaded = False
-        # Load the dataset if exists
-        if os.path.exists(dataset_dir):
-            logging.info(f"Existing dataset found at {dataset_dir}. Loading workspace corners.")
-            dataset = Dataset.from_json(path = dataset_dir)
-            is_dataset_loaded = True
-        
-        # Use UI to select workspace corners
-        else:            
-            logging.info("No existing dataset found. Starting workspace selection.")
-            selector = PointSelectorUI(
-                window_name=config.ui.window_name,
-                points_required=config.ui.points_required,
-            )
-            image_points = selector.select_points(frame)
 
-            if len(image_points) != config.ui.points_required:
-                print(
-                    f"Expected {config.ui.points_required} points, but got {len(image_points)}."
-                    " Exiting without computing homography."
+        with camera_pipeline as pipeline:
+            frame = pipeline.get_frame()
+            # Undistort the frame for UI selection
+            frame = rectifier.undistort_frame(frame)
+        
+            is_dataset_loaded = False
+            # Load the dataset if exists
+            if os.path.exists(dataset_dir):
+                logging.info(f"Existing dataset found at {dataset_dir}. Loading workspace corners.")
+                dataset = Dataset.from_json(path = dataset_dir)
+                is_dataset_loaded = True
+            
+            # Use UI to select workspace corners
+            else:            
+                logging.info("No existing dataset found. Starting workspace selection.")
+                selector = PointSelectorUI(
+                    window_name=config.ui.window_name,
+                    points_required=config.ui.points_required,
                 )
-                return
+                image_points = selector.select_points(frame)
+
+                if len(image_points) != config.ui.points_required:
+                    print(
+                        f"Expected {config.ui.points_required} points, but got {len(image_points)}."
+                        " Exiting without computing homography."
+                    )
+                    return
+                
+                prompter = UserPrompter()
+                n_rows, n_cols = prompter.ask_workspace_grid()
+
+                workspace = Workspace(config.calibration.world_points, image_points)
+                workspace.compute_cells(n_rows = n_rows, n_cols = n_cols)
+
+                dataset = Dataset(name=dataset_name, workspace=workspace)
+                dataset.save(dataset_dir)
+
+
+            calibrator = HomographyCalibrator(world_points=config.calibration.world_points)
+            calibrator.compute_homography(dataset.workspace.corners_img)
+
+            drawing = Drawing(config, calibrator = calibrator)
+
+            # Sample object poses
+            pose_sampler = EpisodeGenerator(workspace = dataset.workspace)
+
+            # Stream video with episode objects overlay
+            episodes = pose_sampler.generate_episodes(num_episodes = 100, max_num_objects = 1)
+            exit_loop = False
             
-            prompter = UserPrompter()
-            n_rows, n_cols = prompter.ask_workspace_grid()
+            for episode in episodes:
+                if exit_loop:
+                    break
+                    
+                obj = episode.objects[0]
+                obj.width = 2.7
+                obj.height = 5.4
+                
+                logging.info(f"Episode: {obj}")
+                
+                # Real-time video feed loop for current episode
+                while True:
+                    frame_current = pipeline.get_frame()
+                    frame_current = rectifier.undistort_frame(frame_current)
+                    
+                    # Overlay workspace and objects on live frame
+                    frame_display = drawing.draw_workspace_edges(frame_current, dataset.workspace)
+                    frame_display = drawing.draw_cels(frame_display, dataset.workspace.cells)
+                    frame_display = drawing.draw_objects(frame_display, objects=episode.objects)
+                    
+                    cv2.imshow(config.ui.window_name, frame_display)
+                    
+                    # Check for key press (space = next episode, other key = exit)
+                    key = cv2.waitKey(30)  # 30ms delay for ~33 FPS
+                    if key == 32:  # Space key - next episode
+                        break
+                    elif key != -1:  # Any other key - exit
+                        exit_loop = True
+                        break
 
-            workspace = Workspace(config.calibration.world_points, image_points)
-            workspace.compute_cells(n_rows = n_rows, n_cols = n_cols)
+            # Ask the excluded and evaluation cells
+            if not is_dataset_loaded:
+                cell_ids = prompter.ask_excluded_cells()
+                dataset.workspace.mark_excluded_cells(ids = cell_ids)
 
-            dataset = Dataset(name=dataset_name, workspace=workspace)
-            dataset.save(dataset_dir)
-
-
-        calibrator = HomographyCalibrator(world_points=config.calibration.world_points)
-        calibrator.compute_homography(dataset.workspace.corners_img)
-
-        drawing = Drawing(config, calibrator = calibrator)
-
-        # Draw workspace
-        frame_scene = drawing.draw_workspace_edges(frame, dataset.workspace)
-        frame_scene = drawing.draw_cels(frame_scene, dataset.workspace.cells)
-
-        # Sample object poses
-        pose_sampler = EpisodeGenerator(workspace = dataset.workspace)
-
-        # Draw object poses incrementally every 0.5 seconds
-        episodes = pose_sampler.generate_episodes(num_episodes = 100, max_num_objects = 3)
-        for episode in episodes:
-            frame_episode = frame_scene.copy()
-            frame_episode = drawing.draw_objects(frame_episode, objects = episode.objects)
-            cv2.imshow(config.ui.window_name, frame_episode)
-            
-            key = cv2.waitKey(1000)
-            if key != -1:
-                break
-
-        # Ask the excluded and evaluation cells
-        if not is_dataset_loaded:
-            cell_ids = prompter.ask_excluded_cells()
-            dataset.workspace.mark_excluded_cells(ids = cell_ids)
-
-            cell_ids = prompter.ask_evaluation_cells()
-            dataset.workspace.mark_evaluation_cells(ids = cell_ids)
-            dataset.save(dataset_dir)
+                cell_ids = prompter.ask_evaluation_cells()
+                dataset.workspace.mark_evaluation_cells(ids = cell_ids)
+                dataset.save(dataset_dir)
 
         
     except Exception as e:

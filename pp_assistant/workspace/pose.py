@@ -3,3 +3,6 @@ class Pose:
         self.x = x
         self.y = y
         self.yaw = yaw
+
+    def __repr__(self):
+        return f'Pose(x={self.x}, y={self.y}, yaw={self.yaw:.2f})'

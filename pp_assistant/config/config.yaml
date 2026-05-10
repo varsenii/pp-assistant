@@ -9,7 +9,7 @@ objects:
     label: red_block
     width: 2.7
     height: 5.4
-    color: [0, 0, 255]
+    color: [0, 255, 0]
   - id: 1
     label: yellow_block
     width: 3.0
@@ -45,7 +45,7 @@ calibration:
   target_world_point: [5.8, 10.0]
 
 marker:
-  color: [0, 0, 255]
+  color: [0, 0, 0]
   radius: 5
   thickness: -1
 

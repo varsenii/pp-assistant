@@ -138,8 +138,12 @@ class Drawing:
         
         # Draw yaw as a small arrow
         arrow_length = 10
-        end_u = int(u + arrow_length * math.cos(pose.yaw))
-        end_v = int(v + arrow_length * math.sin(pose.yaw))
+        self.logger.debug(f'Arrow yaw={pose.yaw}, cos={math.cos(pose.yaw)}, sin={math.sin(pose.yaw)}')
+        angle_degrees = math.radians(pose.yaw)
+        angle_cos = math.cos(angle_degrees)
+        angle_sin = math.sin(angle_degrees)
+        end_u = int(u + arrow_length * angle_cos)
+        end_v = int(v + arrow_length * angle_sin)
         cv2.arrowedLine(
             image,
             (u, v),
@@ -147,5 +151,44 @@ class Drawing:
             color,
             2,
         )
+        
+        corners = object._compute_corners()
+
+        # Draw two edges closest to the camera
+        edges = []
+        if angle_sin >= 0:
+            edges.append( (corners[0], corners[1]) )
+        else:
+            edges.append( (corners[2], corners[3]) )
+        
+        if angle_cos >= 0:
+            edges.append( (corners[1], corners[2]) )
+        else:
+            edges.append( (corners[3], corners[0]) )
+       
+
+        # Compute points of the frontal edge
+
+        for start_point, end_point in edges:
+            self.logger.debug(f'Object edge: {start_point} -> {end_point}')
+            start_u, start_v = self.calibrator.world_to_image(start_point[0], start_point[1])
+            end_u, end_v = self.calibrator.world_to_image(end_point[0], end_point[1])
+
+            cv2.line(
+                image,
+                (start_u, start_v),
+                (end_u, end_v),
+                self.config.drawing.workspace_color,
+                self.config.drawing.workspace_thickness,
+            )
+
+        # else:
+        #     # Compute points of the back edge
+        
+        # if angle_cos > 0:
+        #     # Compute points of the right edge
+        # else:
+        #     # Compute points of the left edge
+
     
         return image
